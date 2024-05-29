@@ -40,7 +40,7 @@
     state: present
 
 - name: Generate selfsignet tls certificate
-  include_tasks: tls.yaml
+  include_tasks: tls.yml
   when: 
     - node_exporter_selfsigned_tls
     - node_exporter_tls_server_config.key_file is defined
