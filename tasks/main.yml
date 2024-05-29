@@ -33,11 +33,22 @@
     node_exporter_download_check is changed
     or node_exporter_version_check.stdout | length == 0
 
-- name: Create node_exporter user.
-  user:
-    name: node_exporter
-    shell: /sbin/nologin
-    state: present
+- name: Create node_exporter config directory
+  ansible.builtin.file:
+    path: "{{ node_exporter_config_dir }}"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: u+rwX,g+rwX,o=rX
+
+- name: Copy the node_exporter config file
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: "{{ node_exporter_config_path }}"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: 0644
+  notify: restart node_exporter
 
 - name: Copy the node_exporter systemd unit file.
   template:
@@ -58,9 +69,27 @@
     state: "{{ node_exporter_state }}"
     enabled: "{{ node_exporter_enabled }}"
 
+- name: Register http scheme
+  set_fact:
+    node_exporter_scheme: "{% if node_exporter_tls_server_config %}https{% else %}http{% endif %}"
+
+- name: Register http auth username
+  set_fact:
+    node_exporter_http_username: "{{ node_exporter_basic_auth_users.keys() | first }}"
+  when: node_exporter_basic_auth_users.keys() | first is defined
+
+- name: Register http auth password
+  set_fact:
+    node_exporter_http_password: "{{ node_exporter_basic_auth_users[node_exporter_http_username] }}"
+  when: node_exporter_http_username is defined
+
 - name: Verify node_exporter is responding to requests.
   uri:
-    url: "http://{% if node_exporter_host !='' %}{{ node_exporter_host }}{% else %}localhost{% endif %}:{{ node_exporter_port }}/"
+    url: "{{ node_exporter_scheme }}://{% if node_exporter_host !='' %}{{ node_exporter_host }}{% else %}localhost{% endif %}:{{ node_exporter_port }}/"
+    force_basic_auth: "{{ true if node_exporter_http_username is defined else omit }}"
+    url_username: "{{ node_exporter_http_username if node_exporter_http_username is defined else omit }}"
+    url_password: "{{ node_exporter_http_password if node_exporter_http_password is defined else omit }}"
     return_content: true
+    validate_certs: false
   register: metrics_output
   failed_when: "'Metrics' not in metrics_output.content"

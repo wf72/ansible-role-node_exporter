@@ -19,3 +19,13 @@ node_exporter_options: ''
 node_exporter_state: started
 node_exporter_enabled: true
 node_exporter_restart: on-failure
+
+node_exporter_tls_server_config: {}
+node_exporter_basic_auth_users: {}
+node_exporter_http_server_config: {}
+
+node_exporter_config_dir:  "/etc/node_exporter"
+node_exporter_config_path: "{{ node_exporter_config_dir }}/config.yaml"
+
+node_exporter_user: node_exporter
+node_exporter_group: node_exporter

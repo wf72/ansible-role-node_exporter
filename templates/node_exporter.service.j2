@@ -3,8 +3,16 @@ Description=NodeExporter
 
 [Service]
 TimeoutStartSec=0
-User=node_exporter
+User={{ node_exporter_user }}
+{% if node_exporter_config_path is defined and node_exporter_config_path %}
+    {% if node_exporter_version is version('1.5.0', '>=') %}
+ExecStart={{ node_exporter_bin_path }} --web.listen-address={{ node_exporter_host }}:{{ node_exporter_port }} {{ node_exporter_options }} --web.config.file={{ node_exporter_config_path }}
+    {% else %}
+ExecStart={{ node_exporter_bin_path }} --web.listen-address={{ node_exporter_host }}:{{ node_exporter_port }} {{ node_exporter_options }} --web.config={{ node_exporter_config_path }}
+    {% endif %}
+{% else %}
 ExecStart={{ node_exporter_bin_path }} --web.listen-address={{ node_exporter_host }}:{{ node_exporter_port }} {{ node_exporter_options }}
+{% endif %}
 Restart={{ node_exporter_restart }}
 
 [Install]
