@@ -33,6 +33,12 @@
     node_exporter_download_check is changed
     or node_exporter_version_check.stdout | length == 0
 
+- name: Create node_exporter user.
+  user:
+    name: "{{ node_exporter_user }}"
+    shell: /sbin/nologin
+    state: present
+
 - name: Create node_exporter config directory
   ansible.builtin.file:
     path: "{{ node_exporter_config_dir }}"
